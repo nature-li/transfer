@@ -457,7 +457,8 @@ class MailFilterProxy(object):
                            'mime-version',
                            'subject',
                            'date',
-                           'message-id')
+                           'message-id',
+                           'content-transfer-encoding')
             for key in root.keys():
                 little = key.lower()
                 if little not in left_header:
