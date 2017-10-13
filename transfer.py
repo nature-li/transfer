@@ -356,7 +356,7 @@ class MailFilterProxy(object):
                     Logger.report(mail_info.content)
 
                 # 调试用
-                break
+                # break
 
             # recorder内存刷到磁盘
             Logger.info("flush_to_disk")
@@ -529,7 +529,7 @@ def __main__():
     # 收件账号
     r_account = raw_input("receive mail: ")
     # 发件邮箱密码
-    r_password = getpass.getpass('receive_password password: ')
+    r_password = getpass.getpass('receive mail password: ')
     # 接收服务器
     pop3_server = raw_input("receive pop3 server: ")
     # 发件账号
@@ -537,7 +537,7 @@ def __main__():
     # 接收邮件密码
     s_password = getpass.getpass('send mail password: ')
     # 发送服务器
-    smpt_server = raw_input("send account smtp server: ")
+    smpt_server = raw_input("send mail smtp server: ")
     # 转发邮箱
     target_account = raw_input("target mail: ")
 
