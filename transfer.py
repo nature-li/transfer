@@ -587,7 +587,7 @@ def __main__():
     recorder_dir = os.path.join(self_dir, '.data')
     if not os.path.exists(recorder_dir):
         os.mkdir(recorder_dir)
-    recorder_file = os.path.join(self_dir, '.data', '.transfer')
+    recorder_file = os.path.join(self_dir, '.data', 'transfer')
 
     # 循环接收邮件
     idx = 0
