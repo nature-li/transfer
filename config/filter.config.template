@@ -1,0 +1,13 @@
+# 使用方法：
+# 支持以下字段匹配：from, to, subject, content
+# 匹配成功后用 send 字段决定是否转发邮件
+# 多个邮件匹配成功时，优先不发送邮件
+
+# 过滤每日报表
+from=;to=;subject=每日报表;content=;send=0;
+
+# 过滤sys.load_pre_core
+from=;subject=sys.load_per_core;
+
+# 过滤mt-confluence
+subject=mt-confluence;

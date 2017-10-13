@@ -1,0 +1,22 @@
+#!/usr/bin/env python2.7
+# coding: utf-8
+
+
+# 日志目录
+log_target = "logs"
+
+# 邮件过滤策略
+filter_file = 'config/filter.config'
+
+# 接收邮箱账号
+receive_account = 'fuck_sky@163.com'
+# 接收服务器
+pop3_server = 'pop.163.com'
+
+# 发送邮箱账号
+send_account = 'fuck_earch@163.com'
+# 发送服务器
+smpt_server = 'smtp.163.com'
+
+# 转发邮箱
+target_account = 'fuck_air@qq.com'
