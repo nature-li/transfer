@@ -25,6 +25,7 @@ class FileDict(object):
             self.stay_seconds = stay_seconds
             self.dict = dict()
             self.load_from_disk()
+            self.update = False
         except:
             Logger.error(traceback.format_exc())
 
@@ -49,6 +50,9 @@ class FileDict(object):
 
     def flush_to_disk(self):
         try:
+            if not self.update:
+                return True
+            self.update = False
             content = json.dumps(self.dict, ensure_ascii=False)
             with open(self.file_name, 'w') as content_file:
                 content_file.write(content)
@@ -67,6 +71,7 @@ class FileDict(object):
             if isinstance(a_key, str):
                 a_key = a_key.decode('utf-8')
             self.dict[a_key] = time.time()
+            self.update = True
             return True
         except:
             Logger.error(traceback.format_exc())
@@ -79,7 +84,8 @@ class FileDict(object):
                 stay = now - value
                 if stay > self.stay_seconds:
                     del self.dict[key]
-                    print 'del self.dict[%s]' % key
+                    self.update = True
+                    Logger.info('del self.dict[%s]' % key)
             return True
         except:
             Logger.error(traceback.format_exc())
