@@ -564,9 +564,6 @@ def __main__():
     except:
         Logger.error(traceback.format_exc())
 
-    os.setsid()
-    os.umask(0)
-
     try:
         pid = os.fork()
         if pid > 0:
