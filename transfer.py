@@ -14,7 +14,6 @@ from email.header import decode_header
 from email.utils import parseaddr
 from email.mime.base import MIMEBase
 from py_log.logger import Logger, LogEnv
-from config import config
 
 poplib._MAXLINE = 10 * 1024 * 1024
 
@@ -524,30 +523,23 @@ def __main__():
     sys.setdefaultencoding('utf-8')
 
     # 日志目录
-    log_target = config.log_target
+    log_target = raw_input("log directory: ")
     # 邮件过滤策
-    filter_file = config.filter_file
+    filter_file = raw_input("filter filter: ")
     # 收件账号
-    r_account = config.receive_account
+    r_account = raw_input("receive mail: ")
+    # 发件邮箱密码
+    r_password = getpass.getpass('receive_password password: ')
     # 接收服务器
-    pop3_server = config.pop3_server
+    pop3_server = raw_input("receive pop3 server: ")
     # 发件账号
-    s_account = config.send_account
+    s_account = raw_input("send mail: ")
+    # 接收邮件密码
+    s_password = getpass.getpass('send mail password: ')
     # 发送服务器
-    smpt_server = config.smpt_server
+    smpt_server = raw_input("send account smtp server: ")
     # 转发邮箱
-    target_account = config.target_account
-
-    # 邮件记录文件
-    self_dir = os.path.dirname(os.path.abspath(__file__))
-    recorder_dir = os.path.join(self_dir, '.data')
-    if not os.path.exists(recorder_dir):
-        os.mkdir(recorder_dir)
-    recorder_file = os.path.join(self_dir, '.data', '.transfer')
-
-    # 输入邮箱密码
-    r_password = getpass.getpass('%s password: ' % r_account)
-    s_password = getpass.getpass('%s password: ' % s_account)
+    target_account = raw_input("target mail: ")
 
     # 是否发送邮件
     input_flag = raw_input("send mail or not? [Y/N]:")
@@ -560,6 +552,13 @@ def __main__():
     # 初始化日志
     Logger.init(LogEnv.develop, log_target, "result", max_file_count=10)
     Logger.info("program is starting......")
+
+    # 邮件记录文件
+    self_dir = os.path.dirname(os.path.abspath(__file__))
+    recorder_dir = os.path.join(self_dir, '.data')
+    if not os.path.exists(recorder_dir):
+        os.mkdir(recorder_dir)
+    recorder_file = os.path.join(self_dir, '.data', '.transfer')
 
     # 循环接收邮件
     idx = 0
