@@ -540,6 +540,9 @@ def __main__():
 
     # 邮件记录文件
     self_dir = os.path.dirname(os.path.abspath(__file__))
+    recorder_dir = os.path.join(self_dir, '.data')
+    if not os.path.exists(recorder_dir):
+        os.mkdir(recorder_dir)
     recorder_file = os.path.join(self_dir, '.data', '.transfer')
 
     # 输入邮箱密码
