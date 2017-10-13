@@ -556,6 +556,26 @@ def __main__():
     Logger.init(LogEnv.develop, log_target, "result", max_file_count=10)
     Logger.info("program is starting......")
 
+    try:
+        pid = os.fork()
+        if pid > 0:
+            Logger.info("#1 parent exit")
+            sys.exit(0)
+    except:
+        Logger.error(traceback.format_exc())
+
+    os.setsid()
+    os.umask(0)
+
+    try:
+        pid = os.fork()
+        if pid > 0:
+            Logger.info("#2 parent exit")
+            Logger.info("pid[%s] is running..." % pid)
+            sys.exit(0)
+    except:
+        Logger.error(traceback.format_exc())
+
     # 邮件记录文件
     self_dir = os.path.dirname(os.path.abspath(__file__))
     recorder_dir = os.path.join(self_dir, '.data')
