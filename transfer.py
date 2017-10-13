@@ -528,7 +528,7 @@ def __main__():
     # 日志目录
     log_target = raw_input("log directory: ")
     # 邮件过滤策
-    filter_file = raw_input("filter filter: ")
+    filter_file = raw_input("filter file: ")
     # 收件账号
     r_account = raw_input("receive mail: ")
     # 发件邮箱密码
