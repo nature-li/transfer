@@ -498,23 +498,26 @@ def loop_once(r_account, r_password, pop3_server,
     :type idx: int
     :return:
     """
-    # 打印标志
-    Logger.info("-----------------------%s--------------------------" % idx)
-    # 初始化已读邮件记录
-    recorder = FileDict(recorder_file, stay_seconds=90 * 24 * 3600)
+    try:
+        # 打印标志
+        Logger.info("-----------------------%s--------------------------" % idx)
+        # 初始化已读邮件记录
+        recorder = FileDict(recorder_file, stay_seconds=90 * 24 * 3600)
 
-    # 初始化过滤策略
-    filters = MultipleMailFilter()
-    if not filters.init(filter_file):
-        Logger.error("init mail filter error")
-        return False
+        # 初始化过滤策略
+        filters = MultipleMailFilter()
+        if not filters.init(filter_file):
+            Logger.error("init mail filter error")
+            return False
 
-    # 初始化邮件 proxy
-    proxy = MailFilterProxy(r_account, r_password, pop3_server,
-                            s_account, s_password, smpt_server,
-                            recorder, filters,
-                            send_flag, target_account)
-    proxy.handle()
+        # 初始化邮件 proxy
+        proxy = MailFilterProxy(r_account, r_password, pop3_server,
+                                s_account, s_password, smpt_server,
+                                recorder, filters,
+                                send_flag, target_account)
+        proxy.handle()
+    except:
+        Logger.error(traceback.format_exc())
 
 
 def __main__():
