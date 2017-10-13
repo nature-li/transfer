@@ -2,4 +2,4 @@
 filter.template.config => filter.config
 
 ###### 启动程序
-nohup python2.7 transfer.py >/dev/null 2>&1 &
+python2.7 transfer.py
