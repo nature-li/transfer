@@ -467,15 +467,15 @@ class MailFilterProxy(object):
             root['to'] = self.target_account
 
             # 打印新key
-            for key in root.keys():
-                raw_header = 'new_key[%s] ====> [%s]' % (key, root.get(key))
-                Logger.info(raw_header)
+            # for key in root.keys():
+            #     raw_header = 'new_key[%s] ====> [%s]' % (key, root.get(key))
+            #     Logger.info(raw_header)
 
-                # 发送邮件
-                server = smtplib.SMTP(self.smpt_server, 25)
-                server.login(self.s_account, self.s_password)
-                server.sendmail(self.s_account, [self.target_account], root.as_string())
-                server.quit()
+            # 发送邮件
+            server = smtplib.SMTP(self.smpt_server, 25)
+            server.login(self.s_account, self.s_password)
+            server.sendmail(self.s_account, [self.target_account], root.as_string())
+            server.quit()
         except:
             Logger.error(traceback.format_exc())
 
