@@ -552,6 +552,8 @@ def __main__():
         return False
     send_flag = True if input_flag == 'Y' else False
 
+    print >> sys.stdout, "program is running in background, please check the running log!"
+
     # 初始化日志
     Logger.init(LogEnv.develop, log_target, "result", max_file_count=10)
     Logger.info("program is starting......")
@@ -560,7 +562,7 @@ def __main__():
         pid = os.fork()
         if pid > 0:
             Logger.info("#1 parent exit")
-            sys.exit(0)
+            os._exit(0)
     except:
         Logger.error(traceback.format_exc())
 
@@ -569,7 +571,7 @@ def __main__():
         if pid > 0:
             Logger.info("#2 parent exit")
             Logger.info("pid[%s] is running..." % pid)
-            sys.exit(0)
+            os._exit(0)
     except:
         Logger.error(traceback.format_exc())
 
