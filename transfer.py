@@ -164,10 +164,9 @@ class SingleMailFilter(object):
     def filter(self, mail_info):
         match = self.match(mail_info)
         if match:
-            send = self.send
-        else:
-            send = not self.send
-        return send
+            return self.send
+
+        return not self.send
 
     def match(self, mail_info):
         """
@@ -175,19 +174,19 @@ class SingleMailFilter(object):
         :return: boolean
         """
         for word in self.from_filter:
-            if mail_info.from_address.find(word) != -1:
+            if mail_info.from_address.find(word) == -1:
                 return False
 
         for word in self.to_filter:
-            if mail_info.to_address.find(word) != -1:
+            if mail_info.to_address.find(word) == -1:
                 return False
 
         for word in self.subject_filter:
-            if mail_info.subject.find(word) != -1:
+            if mail_info.subject.find(word) == -1:
                 return False
 
         for word in self.content_filter:
-            if mail_info.content.find(word) != -1:
+            if mail_info.content.find(word) == -1:
                 return False
 
         return True
@@ -257,7 +256,7 @@ class MultipleMailFilter(object):
         """
         for single_filter in self.filter_list:
             # 有一个不发送则不发送
-            if single_filter.filter(mail_info):
+            if not single_filter.filter(mail_info):
                 return False
         return True
 
@@ -356,13 +355,16 @@ class MailFilterProxy(object):
                     continue
 
                 # 发送邮件
+                Logger.report("send: idx[%s], id[%s], from[%s], to[%s], subject[%s]"
+                              % (mail_idx, mail_id, mail_info.from_address,
+                                 mail_info.to_address, mail_info.subject))
                 if self.send_flag:
                     self.send_mime(root)
                 else:
                     Logger.report(mail_info.content)
 
-                # 调试用
-                # break
+                    # 调试用
+                    # break
 
             # recorder内存刷到磁盘
             Logger.info("flush_to_disk")
@@ -537,19 +539,19 @@ def __main__():
     # 邮件过滤策
     filter_file = raw_input("filter file: ")
     # 收件账号
-    r_account = raw_input("receive mail: ")
+    r_account = raw_input("receive mail account: ")
     # 发件邮箱密码
     r_password = getpass.getpass('receive mail password: ')
     # 接收服务器
     pop3_server = raw_input("receive pop3 server: ")
     # 发件账号
-    s_account = raw_input("send mail: ")
+    s_account = raw_input("send mail account: ")
     # 接收邮件密码
     s_password = getpass.getpass('send mail password: ')
     # 发送服务器
     smpt_server = raw_input("send mail smtp server: ")
     # 转发邮箱
-    target_account = raw_input("target mail: ")
+    target_account = raw_input("target mail account: ")
 
     # 是否发送邮件
     input_flag = raw_input("send mail or not? [Y/N]:")
@@ -561,44 +563,47 @@ def __main__():
 
     print >> sys.stdout, "program is running in background, please check the running log!"
 
+    try:
+        pid = os.fork()
+        if pid > 0:
+            print "#1 parent exit"
+            os._exit(0)
+    except:
+        print traceback.format_exc()
+
+    try:
+        pid = os.fork()
+        if pid > 0:
+            print "#2 parent exit"
+            print "pid[%s] is running..." % pid
+            os._exit(0)
+    except:
+        print traceback.format_exc()
+
     # 初始化日志
     Logger.init(LogEnv.develop, log_target, "result", max_file_count=10)
     Logger.info("program is starting......")
 
-    try:
-        pid = os.fork()
-        if pid > 0:
-            Logger.info("#1 parent exit")
-            os._exit(0)
-    except:
-        Logger.error(traceback.format_exc())
-
-    try:
-        pid = os.fork()
-        if pid > 0:
-            Logger.info("#2 parent exit")
-            Logger.info("pid[%s] is running..." % pid)
-            os._exit(0)
-    except:
-        Logger.error(traceback.format_exc())
-
     # 邮件记录文件
     self_dir = os.path.dirname(os.path.abspath(__file__))
-    recorder_dir = os.path.join(self_dir, '.data')
+    recorder_dir = os.path.join(self_dir, 'data')
     if not os.path.exists(recorder_dir):
         os.mkdir(recorder_dir)
-    recorder_file = os.path.join(self_dir, '.data', 'transfer')
+    recorder_file = os.path.join(self_dir, 'data', 'transfer')
 
     # 循环接收邮件
     idx = 0
     while True:
-        loop_once(r_account, r_password, pop3_server,
-                  s_account, s_password, smpt_server,
-                  recorder_file, filter_file,
-                  send_flag, target_account,
-                  idx)
-        idx += 1
-        time.sleep(60)
+        try:
+            loop_once(r_account, r_password, pop3_server,
+                      s_account, s_password, smpt_server,
+                      recorder_file, filter_file,
+                      send_flag, target_account,
+                      idx)
+            idx += 1
+            time.sleep(60)
+        except:
+            pass
 
 
 if __name__ == '__main__':
