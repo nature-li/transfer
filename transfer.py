@@ -98,6 +98,8 @@ class SomeMailInfo(object):
         self.from_address = ''
         self.to_name = ''
         self.to_address = ''
+        self.cc_name = ''
+        self.cc_address = ''
         self.subject = ''
         self.content = ''
         self.child_mail = list()
@@ -107,6 +109,7 @@ class SingleMailFilter(object):
     def __init__(self):
         self.from_filter = set()
         self.to_filter = set()
+        self.cc_filter = set()
         self.subject_filter = set()
         self.content_filter = set()
         self.send = False
@@ -115,6 +118,7 @@ class SingleMailFilter(object):
         msg = ''
         msg += 'from=' + ','.join(self.from_filter) + ';'
         msg += 'to=' + ','.join(self.to_filter) + ';'
+        msg += "cc=" + ','.join(self.cc_filter) + ';'
         msg += 'subject=' + ','.join(self.subject_filter) + ';'
         msg += 'content=' + ','.join(self.content_filter) + ';'
         msg += 'send=' + str(self.send) + ';'
@@ -124,6 +128,8 @@ class SingleMailFilter(object):
         if len(self.from_filter) > 0:
             return False
         if len(self.to_filter) > 0:
+            return False
+        if len(self.cc_filter) > 0:
             return False
         if len(self.subject_filter) > 0:
             return False
@@ -142,6 +148,12 @@ class SingleMailFilter(object):
         for field in fields:
             if field:
                 self.to_filter.add(field)
+
+    def add_cc(self, value):
+        fields = value.split(',')
+        for field in fields:
+            if field:
+                self.cc_filter.add(field)
 
     def add_subject(self, value):
         fields = value.split(',')
@@ -179,6 +191,10 @@ class SingleMailFilter(object):
 
         for word in self.to_filter:
             if mail_info.to_address.find(word) == -1:
+                return False
+
+        for word in self.cc_filter:
+            if mail_info.cc_address.find(word) == -1:
                 return False
 
         for word in self.subject_filter:
@@ -244,6 +260,9 @@ class MultipleMailFilter(object):
 
                 if header == 'send':
                     a_filter.add_send(value)
+
+                if header == "cc":
+                    a_filter.add_cc(value)
             return a_filter
         except:
             Logger.error(traceback.format_exc())
@@ -422,6 +441,12 @@ class MailFilterProxy(object):
             if value:
                 mail_info.subject = self.decode_str(value)
 
+            # cc
+            value = root.get('Cc', '')
+            header, mail_info.cc_address = parseaddr(value)
+            if value:
+                mail_info.cc_name = self.decode_str(value)
+
             # child MIMEMultipart
             if root.is_multipart():
                 parts = root.get_payload()
@@ -563,26 +588,26 @@ def __main__():
 
     print >> sys.stdout, "program is running in background, please check the running log!"
 
-    try:
-        pid = os.fork()
-        if pid > 0:
-            print "#1 parent exit"
-            os._exit(0)
-    except:
-        print traceback.format_exc()
-
-    try:
-        pid = os.fork()
-        if pid > 0:
-            print "#2 parent exit"
-            print "pid[%s] is running..." % pid
-            os._exit(0)
-    except:
-        print traceback.format_exc()
-
     # 初始化日志
     Logger.init(LogEnv.develop, log_target, "result", max_file_count=10)
     Logger.info("program is starting......")
+
+    try:
+        pid = os.fork()
+        if pid > 0:
+            Logger.info("#1 parent exit")
+            os._exit(0)
+    except:
+        Logger.error(traceback.format_exc())
+
+    try:
+        pid = os.fork()
+        if pid > 0:
+            Logger.info("#2 parent exit")
+            Logger.info("pid[%s] is running..." % pid)
+            os._exit(0)
+    except:
+        Logger.error(traceback.format_exc())
 
     # 邮件记录文件
     self_dir = os.path.dirname(os.path.abspath(__file__))
