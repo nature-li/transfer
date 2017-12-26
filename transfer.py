@@ -368,15 +368,15 @@ class MailFilterProxy(object):
 
                 # 过滤邮件
                 if not self.filters.filter(mail_info):
-                    Logger.report("filter: idx[%s], id[%s], from[%s], to[%s], subject[%s]"
+                    Logger.report("filter: idx[%s], id[%s], from[%s], to[%s], cc[%s], subject[%s]"
                                   % (mail_idx, mail_id, mail_info.from_address,
-                                     mail_info.to_address, mail_info.subject))
+                                     mail_info.to_address, mail_info.cc_address, mail_info.subject))
                     continue
 
                 # 发送邮件
-                Logger.report("send: idx[%s], id[%s], from[%s], to[%s], subject[%s]"
+                Logger.report("send: idx[%s], id[%s], from[%s], to[%s], cc[%s], subject[%s]"
                               % (mail_idx, mail_id, mail_info.from_address,
-                                 mail_info.to_address, mail_info.subject))
+                                 mail_info.to_address, mail_info.cc_address, mail_info.subject))
                 if self.send_flag:
                     self.send_mime(root)
                 else:
