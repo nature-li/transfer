@@ -1,4 +1,5 @@
 filter.xml格式如下：
+```
 <!--过滤规则为: 1)只留下匹配leave后的邮件； 2)从留下的邮件中删除匹配discard的邮件-->
 <!--匹配规则: from, to, cc, subject, content 全匹配才算配置一个leave或discard--->
 
@@ -33,3 +34,4 @@ filter.xml格式如下：
         </item>
     </discard>
 </filter>
+```
