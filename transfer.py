@@ -3,281 +3,21 @@
 
 import sys
 import os
-import time
 import poplib
-import json
 import traceback
 import getpass
 import smtplib
+import time
 from email.parser import Parser
 from email.header import decode_header
-from email.utils import parseaddr
 from email.mime.base import MIMEBase
-from py_log.logger import Logger, LogEnv
+from pylog.logger import Logger, LogEnv
+from file_dict import FileDict
+from mail_info import MailInfo
+from filter import Filter
+from email._parseaddr import AddressList
 
 poplib._MAXLINE = 10 * 1024 * 1024
-
-
-class FileDict(object):
-    def __init__(self, file_name, stay_seconds):
-        try:
-            self.file_name = file_name
-            self.stay_seconds = stay_seconds
-            self.dict = dict()
-            self.load_from_disk()
-            self.update = False
-        except:
-            Logger.error(traceback.format_exc())
-
-    def __del__(self):
-        try:
-            self.clear_dead()
-            self.flush_to_disk()
-        except:
-            Logger.error(traceback.format_exc())
-
-    def load_from_disk(self):
-        try:
-            with open(self.file_name, 'ab+') as content_file:
-                content_file.seek(0, 0)
-                content = content_file.read()
-                if content:
-                    self.dict = json.loads(content)
-            return True
-        except:
-            Logger.error(traceback.format_exc())
-            return False
-
-    def flush_to_disk(self):
-        try:
-            if not self.update:
-                return True
-            self.update = False
-            content = json.dumps(self.dict, ensure_ascii=False)
-            with open(self.file_name, 'w') as content_file:
-                content_file.write(content)
-            return True
-        except:
-            Logger.error(traceback.format_exc())
-            return False
-
-    def exist(self, a_key):
-        if isinstance(a_key, str):
-            a_key = a_key.decode('utf-8')
-        return a_key in self.dict
-
-    def put(self, a_key):
-        try:
-            if isinstance(a_key, str):
-                a_key = a_key.decode('utf-8')
-            self.dict[a_key] = time.time()
-            self.update = True
-            return True
-        except:
-            Logger.error(traceback.format_exc())
-            return False
-
-    def clear_dead(self):
-        try:
-            now = time.time()
-            for key, value in self.dict.items():
-                stay = now - value
-                if stay > self.stay_seconds:
-                    del self.dict[key]
-                    self.update = True
-                    Logger.info('del self.dict[%s]' % key)
-            return True
-        except:
-            Logger.error(traceback.format_exc())
-            return False
-
-
-class SomeMailInfo(object):
-    def __init__(self):
-        self.from_name = ''
-        self.from_address = ''
-        self.to_name = ''
-        self.to_address = ''
-        self.cc_name = ''
-        self.cc_address = ''
-        self.subject = ''
-        self.content = ''
-        self.child_mail = list()
-
-
-class SingleMailFilter(object):
-    def __init__(self):
-        self.from_filter = set()
-        self.to_filter = set()
-        self.cc_filter = set()
-        self.subject_filter = set()
-        self.content_filter = set()
-        self.send = False
-
-    def __str__(self):
-        msg = ''
-        msg += 'from=' + ','.join(self.from_filter) + ';'
-        msg += 'to=' + ','.join(self.to_filter) + ';'
-        msg += "cc=" + ','.join(self.cc_filter) + ';'
-        msg += 'subject=' + ','.join(self.subject_filter) + ';'
-        msg += 'content=' + ','.join(self.content_filter) + ';'
-        msg += 'send=' + str(self.send) + ';'
-        return msg
-
-    def empty(self):
-        if len(self.from_filter) > 0:
-            return False
-        if len(self.to_filter) > 0:
-            return False
-        if len(self.cc_filter) > 0:
-            return False
-        if len(self.subject_filter) > 0:
-            return False
-        if len(self.content_filter) > 0:
-            return False
-        return True
-
-    def add_from(self, value):
-        fields = value.split(',')
-        for field in fields:
-            if field:
-                self.from_filter.add(field)
-
-    def add_to(self, value):
-        fields = value.split(',')
-        for field in fields:
-            if field:
-                self.to_filter.add(field)
-
-    def add_cc(self, value):
-        fields = value.split(',')
-        for field in fields:
-            if field:
-                self.cc_filter.add(field)
-
-    def add_subject(self, value):
-        fields = value.split(',')
-        for field in fields:
-            if field:
-                self.subject_filter.add(field)
-
-    def add_content(self, value):
-        fields = value.split(',')
-        for field in fields:
-            if field:
-                self.content_filter.add(field)
-
-    def add_send(self, value):
-        if value == '0':
-            self.send = False
-        elif value == '1':
-            self.send = True
-
-    def filter(self, mail_info):
-        match = self.match(mail_info)
-        if match:
-            return self.send
-
-        return not self.send
-
-    def match(self, mail_info):
-        """
-        :type mail_info: SomeMailInfo
-        :return: boolean
-        """
-        for word in self.from_filter:
-            if mail_info.from_address.find(word) == -1:
-                return False
-
-        for word in self.to_filter:
-            if mail_info.to_address.find(word) == -1:
-                return False
-
-        for word in self.cc_filter:
-            if mail_info.cc_address.find(word) == -1:
-                return False
-
-        for word in self.subject_filter:
-            if mail_info.subject.find(word) == -1:
-                return False
-
-        for word in self.content_filter:
-            if mail_info.content.find(word) == -1:
-                return False
-
-        return True
-
-
-class MultipleMailFilter(object):
-    def __init__(self):
-        self.filter_list = list()
-        """:type: list[SingleMailFilter]"""
-
-    def init(self, strategy_file):
-        try:
-            with open(strategy_file, 'rb') as content_file:
-                for line in content_file:
-                    if not line:
-                        continue
-                    if line.startswith('#'):
-                        continue
-                    a_filter = self.get_filter(line)
-                    if not a_filter:
-                        continue
-                    if not a_filter.empty():
-                        Logger.info(str(a_filter))
-                        self.filter_list.append(a_filter)
-            return True
-        except Exception, msg:
-            Logger.error(msg)
-            return False
-
-    @classmethod
-    def get_filter(cls, line):
-        try:
-            a_filter = SingleMailFilter()
-            fields = line.split(';')
-            for field in fields:
-                if not field:
-                    continue
-                twice = field.split('=')
-                if len(twice) != 2:
-                    continue
-                header = twice[0]
-                value = twice[1]
-
-                if header == 'from':
-                    a_filter.add_from(value)
-
-                if header == 'to':
-                    a_filter.add_to(value)
-
-                if header == 'subject':
-                    a_filter.add_subject(value)
-
-                if header == 'content':
-                    a_filter.add_content(value)
-
-                if header == 'send':
-                    a_filter.add_send(value)
-
-                if header == "cc":
-                    a_filter.add_cc(value)
-            return a_filter
-        except:
-            Logger.error(traceback.format_exc())
-            return None
-
-    def filter(self, mail_info):
-        """
-        :type mail_info: SomeMailInfo
-        :return:
-        """
-        for single_filter in self.filter_list:
-            # 有一个不发送则不发送
-            if not single_filter.filter(mail_info):
-                return False
-        return True
 
 
 class MailFilterProxy(object):
@@ -346,6 +86,43 @@ class MailFilterProxy(object):
             Logger.error(traceback.format_exc())
             return None
 
+    def handle_one(self, mail_idx, mail_id):
+        try:
+            Logger.info("get mail[%s]" % mail_idx)
+            resp, lines, octets = self.pop3_session.retr(mail_idx)
+            msg_content = '\r\n'.join(lines)
+            root = Parser().parsestr(msg_content)
+
+            # 记录邮件
+            self.recorder.put(mail_id)
+
+            # 解析邮件
+            mail_info = self.parse_mail(root)
+            if not mail_info:
+                return
+
+            # 过滤邮件
+            msg = "idx[{}], id[{}], from[{}], to[{}], cc[{}], subject[{}]". \
+                format(mail_idx,
+                       mail_id,
+                       mail_info.from_address,
+                       mail_info.to_address,
+                       mail_info.cc_address,
+                       mail_info.subject)
+
+            if not self.filters.filter(mail_info):
+                Logger.report("filter: " + msg)
+                return
+
+            # 发送邮件
+            Logger.report("send: " + msg)
+            if self.send_flag:
+                self.send_mime(root)
+            else:
+                Logger.report(mail_info.content)
+        except:
+            Logger.error(traceback.format_exc())
+
     def handle(self):
         try:
             # 获取邮件唯一编号
@@ -353,37 +130,7 @@ class MailFilterProxy(object):
 
             # 依次处理所有邮件
             for mail_idx, mail_id in mail_dict.items():
-                Logger.info("get mail[%s]" % mail_idx)
-                resp, lines, octets = self.pop3_session.retr(mail_idx)
-                msg_content = '\r\n'.join(lines)
-                root = Parser().parsestr(msg_content)
-
-                # 记录邮件
-                self.recorder.put(mail_id)
-
-                # 解析邮件
-                mail_info = self.parse_mail(root)
-                if not mail_info:
-                    continue
-
-                # 过滤邮件
-                if not self.filters.filter(mail_info):
-                    Logger.report("filter: idx[%s], id[%s], from[%s], to[%s], cc[%s], subject[%s]"
-                                  % (mail_idx, mail_id, mail_info.from_address,
-                                     mail_info.to_address, mail_info.cc_address, mail_info.subject))
-                    continue
-
-                # 发送邮件
-                Logger.report("send: idx[%s], id[%s], from[%s], to[%s], cc[%s], subject[%s]"
-                              % (mail_idx, mail_id, mail_info.from_address,
-                                 mail_info.to_address, mail_info.cc_address, mail_info.subject))
-                if self.send_flag:
-                    self.send_mime(root)
-                else:
-                    Logger.report(mail_info.content)
-
-                    # 调试用
-                    # break
+                self.handle_one(mail_idx, mail_id)
 
             # recorder内存刷到磁盘
             Logger.info("flush_to_disk")
@@ -415,37 +162,45 @@ class MailFilterProxy(object):
             return None
 
     @classmethod
-    def filter_mail(cls, mail_info):
-        """
-        :type mail_info: SomeMailInfo
-        :return: boolean
-        """
+    def parse_address(cls, addr):
+        return AddressList(addr).addresslist
 
     # indent用于缩进显示:
     def parse_mail(self, root):
         try:
-            mail_info = SomeMailInfo()
+            mail_info = MailInfo()
 
             # from
             value = root.get('From', '')
-            header, mail_info.from_address = parseaddr(value)
-            mail_info.from_name = self.decode_str(header)
+            values = self.parse_address(value)
+            if values:
+                for (header, address) in values:
+                    name = self.decode_str(header)
+                    mail_info.from_name.add(name)
+                    mail_info.from_address.add(address)
 
             # to
             value = root.get('To', '')
-            header, mail_info.to_address = parseaddr(value)
-            mail_info.to_name = self.decode_str(header)
+            values = self.parse_address(value)
+            if values:
+                for (header, address) in values:
+                    name = self.decode_str(header)
+                    mail_info.to_name.add(name)
+                    mail_info.to_address.add(address)
+
+            # cc
+            value = root.get('Cc', '')
+            values = self.parse_address(value)
+            if values:
+                for (header, address) in values:
+                    name = self.decode_str(header)
+                    mail_info.cc_name.add(name)
+                    mail_info.cc_address.add(address)
 
             # subject
             value = root.get('Subject', '')
             if value:
                 mail_info.subject = self.decode_str(value)
-
-            # cc
-            value = root.get('Cc', '')
-            header, mail_info.cc_address = parseaddr(value)
-            if value:
-                mail_info.cc_name = self.decode_str(value)
 
             # child MIMEMultipart
             if root.is_multipart():
@@ -539,8 +294,8 @@ def loop_once(r_account, r_password, pop3_server,
         recorder = FileDict(recorder_file, stay_seconds=90 * 24 * 3600)
 
         # 初始化过滤策略
-        filters = MultipleMailFilter()
-        if not filters.init(filter_file):
+        filters = Filter()
+        if not filters.load(filter_file):
             Logger.error("init mail filter error")
             return False
 
@@ -560,23 +315,43 @@ def __main__():
     sys.setdefaultencoding('utf-8')
 
     # 日志目录
-    log_target = raw_input("log directory: ")
+    log_target = "logs"
     # 邮件过滤策
-    filter_file = raw_input("filter file: ")
+    filter_file = "config/filter.xml"
     # 收件账号
     r_account = raw_input("receive mail account: ")
-    # 发件邮箱密码
+    # 收件密码
     r_password = getpass.getpass('receive mail password: ')
     # 接收服务器
-    pop3_server = raw_input("receive pop3 server: ")
+    pop3_server = "pop.qiye.163.com"
     # 发件账号
     s_account = raw_input("send mail account: ")
-    # 接收邮件密码
+    # 发件密码
     s_password = getpass.getpass('send mail password: ')
     # 发送服务器
-    smpt_server = raw_input("send mail smtp server: ")
+    smpt_server = "smtp.163.com"
     # 转发邮箱
     target_account = raw_input("target mail account: ")
+
+    # 非调试状态时获取用户输入
+    # # 日志目录
+    # log_target = raw_input("log directory: ")
+    # # 邮件过滤策
+    # filter_file = raw_input("filter file: ")
+    # # 收件账号
+    # r_account = raw_input("receive mail account: ")
+    # # 发件密码
+    # r_password = getpass.getpass('receive mail password: ')
+    # # 接收服务器
+    # pop3_server = raw_input("receive pop3 server: ")
+    # # 发件账号
+    # s_account = raw_input("send mail account: ")
+    # # 发件密码
+    # s_password = getpass.getpass('send mail password: ')
+    # # 发送服务器
+    # smpt_server = raw_input("send mail smtp server: ")
+    # # 转发邮箱
+    # target_account = raw_input("target mail account: ")
 
     # 是否发送邮件
     input_flag = raw_input("send mail or not? [Y/N]:")
@@ -592,6 +367,7 @@ def __main__():
     Logger.init(LogEnv.develop, log_target, "result", max_file_count=10)
     Logger.info("program is starting......")
 
+    # 非调试状态时在后台启动
     try:
         pid = os.fork()
         if pid > 0:
@@ -626,9 +402,12 @@ def __main__():
                       send_flag, target_account,
                       idx)
             idx += 1
+            # 非调试状态时循环转发邮件
             time.sleep(60)
+            # 调试用
+            # break
         except:
-            pass
+            Logger.error(traceback.format_exc())
 
 
 if __name__ == '__main__':

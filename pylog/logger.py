@@ -145,9 +145,9 @@ class Logger(object):
         cls.__process.setLevel(level[0])
 
     @classmethod
-    def trace(cls, msg, pvid="", keyword="normal"):
+    def trace(cls, msg, pvid="", keyword="normal", stack_idx=1):
         try:
-            caller_frame_record = inspect.stack()[1]
+            caller_frame_record = inspect.stack()[stack_idx]
             frame = caller_frame_record[0]
             info = inspect.getframeinfo(frame)
             file_name = info.filename
@@ -159,9 +159,9 @@ class Logger(object):
             print traceback.format_exc()
 
     @classmethod
-    def debug(cls, msg, pvid="", keyword="normal"):
+    def debug(cls, msg, pvid="", keyword="normal", stack_idx=1):
         try:
-            caller_frame_record = inspect.stack()[1]
+            caller_frame_record = inspect.stack()[stack_idx]
             frame = caller_frame_record[0]
             info = inspect.getframeinfo(frame)
             file_name = info.filename
@@ -173,9 +173,9 @@ class Logger(object):
             print traceback.format_exc()
 
     @classmethod
-    def info(cls, msg, pvid="", keyword="normal"):
+    def info(cls, msg, pvid="", keyword="normal", stack_idx=1):
         try:
-            caller_frame_record = inspect.stack()[1]
+            caller_frame_record = inspect.stack()[stack_idx]
             frame = caller_frame_record[0]
             info = inspect.getframeinfo(frame)
             file_name = info.filename
@@ -187,9 +187,9 @@ class Logger(object):
             print traceback.format_exc()
 
     @classmethod
-    def warn(cls, msg, pvid="", keyword="normal"):
+    def warn(cls, msg, pvid="", keyword="normal", stack_idx=1):
         try:
-            caller_frame_record = inspect.stack()[1]
+            caller_frame_record = inspect.stack()[stack_idx]
             frame = caller_frame_record[0]
             info = inspect.getframeinfo(frame)
             file_name = info.filename
@@ -201,9 +201,9 @@ class Logger(object):
             print traceback.format_exc()
 
     @classmethod
-    def error(cls, msg, pvid="", keyword="normal"):
+    def error(cls, msg, pvid="", keyword="normal", stack_idx=1):
         try:
-            caller_frame_record = inspect.stack()[1]
+            caller_frame_record = inspect.stack()[stack_idx]
             frame = caller_frame_record[0]
             info = inspect.getframeinfo(frame)
             file_name = info.filename
@@ -215,9 +215,9 @@ class Logger(object):
             print traceback.format_exc()
 
     @classmethod
-    def fatal(cls, msg, pvid="", keyword="normal"):
+    def fatal(cls, msg, pvid="", keyword="normal", stack_idx=1):
         try:
-            caller_frame_record = inspect.stack()[1]
+            caller_frame_record = inspect.stack()[stack_idx]
             frame = caller_frame_record[0]
             info = inspect.getframeinfo(frame)
             file_name = info.filename
@@ -229,9 +229,9 @@ class Logger(object):
             print traceback.format_exc()
 
     @classmethod
-    def report(cls, msg, pvid="", keyword="normal"):
+    def report(cls, msg, pvid="", keyword="normal", stack_idx=1):
         try:
-            caller_frame_record = inspect.stack()[1]
+            caller_frame_record = inspect.stack()[stack_idx]
             frame = caller_frame_record[0]
             info = inspect.getframeinfo(frame)
             file_name = info.filename

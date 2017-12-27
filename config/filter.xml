@@ -1,0 +1,31 @@
+<!--leave first then discard-->
+<!--<item>-->
+    <!--<from></from>-->
+    <!--<to></to>-->
+    <!--<cc></cc>-->
+    <!--<subject></subject>-->
+    <!--<content></content>-->
+<!--</item>-->
+
+<filter>
+    <leave>
+        <item>
+            <to>hello@fuckyou.com</to>
+        </item>
+        <item>
+            <to>hi@fuckyou.com</to>
+        </item>
+    </leave>
+    <discard>
+        <item>
+            <subject>how to fuck</subject>
+        </item>
+        <item>
+            <subject>no-subject</subject>
+        </item>
+        <item>
+            <from>no@fuckyou.com</from>
+            <subject>good</subject>
+        </item>
+    </discard>
+</filter>
