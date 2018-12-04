@@ -13,6 +13,7 @@ from email.header import decode_header
 from email.mime.base import MIMEBase
 from pylog.logger import Logger, LogEnv
 from file_dict import FileDict
+from db_dict import DBDict
 from mail_info import MailInfo
 from filter import Filter
 from email._parseaddr import AddressList
@@ -40,7 +41,7 @@ class MailFilterProxy(object):
         self.target_account = target_account
         """:type: str"""
         self.recorder = recorder
-        """:type: FileDict"""
+        """:type: DBDict"""
         self.filters = filters
         """:type: MultipleMailFilter"""
         self.send_flag = send_flag
@@ -133,8 +134,8 @@ class MailFilterProxy(object):
                 self.handle_one(mail_idx, mail_id)
 
             # recorder内存刷到磁盘
-            Logger.info("flush_to_disk")
-            self.recorder.flush_to_disk()
+            Logger.info("close sqlite")
+            self.recorder.close()
         except:
             Logger.error(traceback.format_exc())
 
@@ -291,7 +292,7 @@ def loop_once(r_account, r_password, pop3_server,
         # 打印标志
         Logger.info("-----------------------%s--------------------------" % idx)
         # 初始化已读邮件记录
-        recorder = FileDict(recorder_file, stay_seconds=90 * 24 * 3600)
+        recorder = DBDict(recorder_file)
 
         # 初始化过滤策略
         filters = Filter()
@@ -390,7 +391,7 @@ def __main__():
     recorder_dir = os.path.join(self_dir, 'data')
     if not os.path.exists(recorder_dir):
         os.mkdir(recorder_dir)
-    recorder_file = os.path.join(self_dir, 'data', 'transfer')
+    recorder_file = os.path.join(self_dir, 'data', 'transfer.db')
 
     # 循环接收邮件
     idx = 0
